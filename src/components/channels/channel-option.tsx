@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentType } from "react";
 import { Mail, MessageSquare } from "lucide-react";
 import {
   FaFacebookF,
@@ -16,6 +17,8 @@ type ChannelOptionProps = {
   onCheckedChange?: (checked: boolean) => void;
 };
 
+type ChannelIcon = ComponentType<{ className?: string }>;
+
 const channelIcons = {
   email: Mail,
   sms: MessageSquare,
@@ -23,7 +26,7 @@ const channelIcons = {
   instagram: FaInstagram,
   facebook: FaFacebookF,
   linkedin: FaLinkedinIn,
-} satisfies Record<MessageChannel, typeof Mail>;
+} satisfies Record<MessageChannel, ChannelIcon>;
 
 export function ChannelOption({
   value,

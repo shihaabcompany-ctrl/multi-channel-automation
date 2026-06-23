@@ -12,6 +12,11 @@ export type AuthSession = {
   companyId: string | null;
 };
 
+export type CompanyAuthSession = AuthSession & {
+  companyId: string;
+  role: Exclude<UserRole, "super_admin">;
+};
+
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
 
@@ -82,14 +87,14 @@ export async function requireAdmin() {
   return session;
 }
 
-export async function requireCompanyUser() {
+export async function requireCompanyUser(): Promise<CompanyAuthSession> {
   const session = await requireSession();
 
   if (!session.companyId || session.role === "super_admin") {
     throw new Error("Forbidden");
   }
 
-  return session;
+  return session as CompanyAuthSession;
 }
 
 export async function findUserByEmail(email: string) {

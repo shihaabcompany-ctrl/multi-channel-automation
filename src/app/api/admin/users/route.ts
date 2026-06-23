@@ -32,7 +32,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAdmin();
+    const session = await requireAdmin();
 
     const body = await request.json();
     const parsed = createUserSchema.safeParse(body);
