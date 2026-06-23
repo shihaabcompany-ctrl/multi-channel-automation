@@ -17,8 +17,8 @@ export default async function SentPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Sent</h1>
-        <p className="text-muted-foreground">
+        <h1 className="page-title">Sent</h1>
+        <p className="page-subtitle">
           View sent, pending, and failed delivery records.
         </p>
       </div>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { spawn } = require("child_process");
 
 const intervalMs = Number(process.env.WORKER_INTERVAL_MS || 30000);

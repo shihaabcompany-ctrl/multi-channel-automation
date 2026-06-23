@@ -15,8 +15,8 @@ export default async function ContactsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Contacts</h1>
-        <p className="text-muted-foreground">
+        <h1 className="page-title">Contacts</h1>
+        <p className="page-subtitle">
           Manage contacts for email, SMS, and WhatsApp campaigns.
         </p>
       </div>

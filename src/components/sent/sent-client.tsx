@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import type { MessageLog } from "@/types/database";
 
 type FilterValue = "all" | string;
@@ -39,7 +40,7 @@ export function SentClient({ messages }: { messages: MessageLog[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_1fr_auto_auto]">
+      <div className="app-panel grid gap-3 p-4 md:grid-cols-[1fr_1fr_1fr_1fr_auto_auto]">
         <select
           value={channel}
           onChange={(event) => setChannel(event.target.value)}
@@ -90,39 +91,61 @@ export function SentClient({ messages }: { messages: MessageLog[] }) {
         Showing {filteredMessages.length} of {messages.length} messages.
       </div>
 
-      <div className="rounded-lg border">
-        <div className="grid grid-cols-6 border-b px-4 py-3 text-sm font-medium">
-          <div>Channel</div>
-          <div>Recipient</div>
-          <div>Status</div>
-          <div>Error</div>
-          <div>Sent At</div>
-          <div>Created</div>
-        </div>
-
-        {filteredMessages.map((message) => (
-          <div
-            key={message.id}
-            className="grid grid-cols-6 border-b px-4 py-3 text-sm last:border-b-0"
-          >
-            <div>{message.channel}</div>
-            <div>{message.recipient ?? "-"}</div>
-            <div>{message.status}</div>
-            <div>{message.error_reason ?? "-"}</div>
-            <div>
-              {message.sent_at
-                ? new Date(message.sent_at).toISOString().slice(0, 16)
-                : "-"}
+      <div className="app-panel overflow-hidden">
+        <div className="overflow-x-auto">
+          <div className="min-w-[920px]">
+            <div className="grid grid-cols-6 border-b bg-muted/40 px-4 py-3 text-xs font-medium uppercase text-muted-foreground">
+              <div>Channel</div>
+              <div>Recipient</div>
+              <div>Status</div>
+              <div>Error</div>
+              <div>Sent At</div>
+              <div>Created</div>
             </div>
-            <div>{new Date(message.created_at).toISOString().slice(0, 10)}</div>
-          </div>
-        ))}
 
-        {!filteredMessages.length ? (
-          <div className="px-4 py-6 text-sm text-muted-foreground">
-            No messages found.
+            {filteredMessages.map((message) => (
+              <div
+                key={message.id}
+                className="grid grid-cols-6 border-b px-4 py-3 text-sm last:border-b-0"
+              >
+                <div className="capitalize">{message.channel}</div>
+                <div className="truncate text-muted-foreground">
+                  {message.recipient ?? "-"}
+                </div>
+                <div>
+                  <Badge
+                    variant={
+                      message.status === "failed"
+                        ? "destructive"
+                        : message.status === "sent"
+                          ? "default"
+                          : "outline"
+                    }
+                  >
+                    {message.status}
+                  </Badge>
+                </div>
+                <div className="truncate text-muted-foreground">
+                  {message.error_reason ?? "-"}
+                </div>
+                <div className="text-muted-foreground">
+                  {message.sent_at
+                    ? new Date(message.sent_at).toISOString().slice(0, 16)
+                    : "-"}
+                </div>
+                <div className="text-muted-foreground">
+                  {new Date(message.created_at).toISOString().slice(0, 10)}
+                </div>
+              </div>
+            ))}
+
+            {!filteredMessages.length ? (
+              <div className="px-4 py-8 text-sm text-muted-foreground">
+                No messages found.
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        </div>
       </div>
     </div>
   );

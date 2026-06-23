@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const createUserSchema = z.object({
@@ -56,6 +57,18 @@ export async function POST(request: Request) {
     if (error) {
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
+
+    await writeAuditLog({
+      actorUserId: session.userId,
+      companyId: data.company_id,
+      action: "user.created",
+      targetType: "user",
+      targetId: data.id,
+      metadata: {
+        email: data.email,
+        role: data.role,
+      },
+    });
 
     return NextResponse.json({ user: data }, { status: 201 });
   } catch {

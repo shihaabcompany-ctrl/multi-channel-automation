@@ -5,6 +5,7 @@ type SendEmailPayload = {
   to: string;
   subject: string;
   text: string;
+  html?: string | null;
 };
 
 async function sendGmailEmail(payload: SendEmailPayload) {
@@ -31,6 +32,7 @@ async function sendGmailEmail(payload: SendEmailPayload) {
     to: payload.to,
     subject: payload.subject,
     text: payload.text,
+    html: payload.html ?? undefined,
   });
 
   return {
@@ -57,6 +59,7 @@ async function sendResendEmail(payload: SendEmailPayload) {
     to: payload.to,
     subject: payload.subject,
     text: payload.text,
+    html: payload.html ?? undefined,
   });
 
   if (error) {

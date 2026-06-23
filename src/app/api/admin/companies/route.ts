@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const createCompanySchema = z.object({
@@ -25,7 +26,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   const body = await request.json();
   const parsed = createCompanySchema.safeParse(body);
@@ -46,6 +47,19 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
+
+  await writeAuditLog({
+    actorUserId: session.userId,
+    companyId: data.id,
+    action: "company.created",
+    targetType: "company",
+    targetId: data.id,
+    metadata: {
+      name: data.name,
+      plan: data.plan,
+      status: data.status,
+    },
+  });
 
   return NextResponse.json({ company: data }, { status: 201 });
 }

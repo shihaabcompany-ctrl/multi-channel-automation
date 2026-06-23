@@ -63,13 +63,19 @@ export type MessageChannel =
   | "facebook"
   | "linkedin";
 
+export type PlatformConnectionPlatform = Exclude<MessageChannel, "email" | "sms">;
+
 export type MessageStatus = "pending" | "sent" | "failed";
+export type InboxMessageStatus = "unread" | "read" | "archived";
 
 export type Automation = {
   id: string;
   company_id: string;
   title: string;
   media_urls: string[];
+  media_items: AutomationMediaItem[];
+  email_content_blocks: EmailContentBlock[];
+  social_caption: string | null;
   message_text: string;
   target_channels: MessageChannel[];
   contact_group_id: string | null;
@@ -91,4 +97,66 @@ export type MessageLog = {
   error_reason: string | null;
   sent_at: string | null;
   created_at: string;
+};
+
+export type AutomationMediaItem = {
+  url: string;
+  caption: string | null;
+  scheduledAt: string | null;
+};
+
+export type EmailContentBlock =
+  | {
+      id: string;
+      type: "text";
+      content: string;
+    }
+  | {
+      id: string;
+      type: "image";
+      url: string;
+      alt: string | null;
+    };
+
+export type PlatformConnection = {
+  id: string;
+  company_id: string;
+  platform: PlatformConnectionPlatform;
+  encrypted_access_token: string;
+  encrypted_refresh_token: string | null;
+  expires_at: string | null;
+  external_account_id: string;
+  connected_account_name: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InboxMessage = {
+  id: string;
+  company_id: string;
+  channel: MessageChannel;
+  sender: string;
+  content: string;
+  status: InboxMessageStatus;
+  received_at: string;
+  created_at: string;
+};
+
+export type AuditLog = {
+  id: string;
+  actor_user_id: string | null;
+  company_id: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+export type PlatformSetting = {
+  key: string;
+  value: Record<string, unknown>;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
 };

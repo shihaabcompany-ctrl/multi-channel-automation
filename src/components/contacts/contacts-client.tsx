@@ -108,7 +108,7 @@ export function ContactsClient({ contacts }: { contacts: Contact[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="app-panel flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
         <Input
           className="md:max-w-sm"
           placeholder="Search contacts..."
@@ -117,13 +117,15 @@ export function ContactsClient({ contacts }: { contacts: Contact[] }) {
         />
 
         <Button asChild variant="outline">
+          {/* API download endpoint needs a regular anchor. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/api/contacts/export">Export CSV</a>
         </Button>
       </div>
 
       <form
         onSubmit={editingContact ? updateContact : createContact}
-        className="grid gap-3 rounded-lg border p-4 md:grid-cols-[1fr_1fr_1fr_auto_auto]"
+        className="app-panel grid gap-3 p-4 md:grid-cols-[1fr_1fr_1fr_auto_auto]"
       >
         <Input
           name="name"
@@ -173,47 +175,51 @@ export function ContactsClient({ contacts }: { contacts: Contact[] }) {
         ) : null}
       </form>
 
-      <div className="rounded-lg border">
-        <div className="grid grid-cols-4 border-b px-4 py-3 text-sm font-medium">
-          <div>Name</div>
-          <div>Email</div>
-          <div>Phone</div>
-          <div className="text-right">Actions</div>
-        </div>
-
-        {filteredContacts.map((contact) => (
-          <div
-            key={contact.id}
-            className="grid grid-cols-4 items-center border-b px-4 py-3 text-sm last:border-b-0"
-          >
-            <div>{contact.name}</div>
-            <div>{contact.email ?? "-"}</div>
-            <div>{contact.phone ?? "-"}</div>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setEditingContact(contact)}
-              >
-                Edit
-              </Button>
-
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => deleteContact(contact.id)}
-              >
-                Delete
-              </Button>
+      <div className="app-panel overflow-hidden">
+        <div className="overflow-x-auto">
+          <div className="min-w-[680px]">
+            <div className="grid grid-cols-4 border-b bg-muted/40 px-4 py-3 text-xs font-medium uppercase text-muted-foreground">
+              <div>Name</div>
+              <div>Email</div>
+              <div>Phone</div>
+              <div className="text-right">Actions</div>
             </div>
-          </div>
-        ))}
 
-        {!filteredContacts.length ? (
-          <div className="px-4 py-6 text-sm text-muted-foreground">
-            No contacts found.
+            {filteredContacts.map((contact) => (
+              <div
+                key={contact.id}
+                className="grid grid-cols-4 items-center border-b px-4 py-3 text-sm last:border-b-0"
+              >
+                <div className="font-medium">{contact.name}</div>
+                <div className="text-muted-foreground">{contact.email ?? "-"}</div>
+                <div className="text-muted-foreground">{contact.phone ?? "-"}</div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingContact(contact)}
+                  >
+                    Edit
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deleteContact(contact.id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {!filteredContacts.length ? (
+              <div className="px-4 py-8 text-sm text-muted-foreground">
+                No contacts found.
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        </div>
       </div>
     </div>
   );

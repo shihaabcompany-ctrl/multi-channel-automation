@@ -46,7 +46,7 @@ export function CompanyCreateForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row"
+      className="app-panel flex flex-col gap-3 p-4 md:flex-row"
     >
       <Input name="name" placeholder="Company name" required />
 

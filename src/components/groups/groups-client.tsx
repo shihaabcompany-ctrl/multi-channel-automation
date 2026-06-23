@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import * as XLSX from "xlsx";
 import type { Contact, ContactGroup } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +18,47 @@ type GroupsClientProps = {
   members: GroupMemberRow[];
 };
 
+type ImportedContact = {
+  name?: string;
+  email?: string;
+  phone?: string;
+};
+
+function getCell(row: Record<string, unknown>, names: string[]) {
+  const normalizedEntries = Object.entries(row).map(([key, value]) => [
+    key.trim().toLowerCase().replaceAll(" ", ""),
+    value,
+  ]);
+
+  for (const name of names) {
+    const match = normalizedEntries.find(([key]) => key === name);
+    if (match) return String(match[1] ?? "").trim();
+  }
+
+  return "";
+}
+
+async function parseContactsFile(file: File): Promise<ImportedContact[]> {
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const firstSheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[firstSheetName];
+
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+    defval: "",
+  });
+
+  return rows.map((row) => ({
+    name: getCell(row, ["name", "fullname", "contactname"]),
+    email: getCell(row, ["email", "emailaddress"]),
+    phone: getCell(row, ["phone", "phonenumber", "mobile", "mobilenumber"]),
+  }));
+}
+
 export function GroupsClient({ groups, contacts, members }: GroupsClientProps) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [importResult, setImportResult] = useState("");
   const [loading, setLoading] = useState(false);
 
   const contactsByGroupId = useMemo(() => {
@@ -46,6 +85,7 @@ export function GroupsClient({ groups, contacts, members }: GroupsClientProps) {
 
     const response = await fetch("/api/groups", {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -66,9 +106,45 @@ export function GroupsClient({ groups, contacts, members }: GroupsClientProps) {
     router.refresh();
   }
 
+  async function importContacts(groupId: string, file: File | null) {
+    if (!file) return;
+
+    setError("");
+    setImportResult("");
+    setLoading(true);
+
+    const parsedContacts = await parseContactsFile(file);
+
+    const response = await fetch(`/api/groups/${groupId}/import-contacts`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contacts: parsedContacts,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.message ?? "Could not import contacts.");
+      setLoading(false);
+      return;
+    }
+
+    setImportResult(
+      `Imported: ${data.created} created, ${data.reused} reused, ${data.assigned} assigned.`
+    );
+    setLoading(false);
+    router.refresh();
+  }
+
   async function deleteGroup(id: string) {
     await fetch(`/api/groups/${id}`, {
       method: "DELETE",
+      credentials: "include",
     });
 
     router.refresh();
@@ -79,6 +155,7 @@ export function GroupsClient({ groups, contacts, members }: GroupsClientProps) {
 
     await fetch(`/api/groups/${groupId}/members`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -91,6 +168,7 @@ export function GroupsClient({ groups, contacts, members }: GroupsClientProps) {
   async function removeMember(groupId: string, contactId: string) {
     await fetch(`/api/groups/${groupId}/members/${contactId}`, {
       method: "DELETE",
+      credentials: "include",
     });
 
     router.refresh();
@@ -100,15 +178,18 @@ export function GroupsClient({ groups, contacts, members }: GroupsClientProps) {
     <div className="space-y-6">
       <form
         onSubmit={createGroup}
-        className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row"
+        className="app-panel flex flex-col gap-3 p-4 md:flex-row"
       >
         <Input name="name" placeholder="Group name" required />
 
         <Button type="submit" disabled={loading}>
-          {loading ? "Creating..." : "Create Group"}
+          {loading ? "Working..." : "Create Group"}
         </Button>
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {importResult ? (
+          <p className="text-sm text-muted-foreground">{importResult}</p>
+        ) : null}
       </form>
 
       <div className="grid gap-4">
@@ -120,7 +201,7 @@ export function GroupsClient({ groups, contacts, members }: GroupsClientProps) {
           );
 
           return (
-            <div key={group.id} className="rounded-lg border p-4">
+            <div key={group.id} className="app-panel p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="font-semibold">{group.name}</h2>
@@ -138,7 +219,7 @@ export function GroupsClient({ groups, contacts, members }: GroupsClientProps) {
                 </Button>
               </div>
 
-              <div className="mt-4 flex flex-col gap-3 md:flex-row">
+              <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr]">
                 <select
                   className="h-10 rounded-md border bg-background px-3 text-sm"
                   defaultValue=""
@@ -147,20 +228,30 @@ export function GroupsClient({ groups, contacts, members }: GroupsClientProps) {
                     event.currentTarget.value = "";
                   }}
                 >
-                  <option value="">Add contact...</option>
+                  <option value="">Add existing contact...</option>
                   {availableContacts.map((contact) => (
                     <option key={contact.id} value={contact.id}>
                       {contact.name} {contact.email ? `(${contact.email})` : ""}
                     </option>
                   ))}
                 </select>
+
+                <Input
+                  type="file"
+                  accept=".csv,.xls,.xlsx"
+                  disabled={loading}
+                  onChange={(event) => {
+                    importContacts(group.id, event.target.files?.[0] ?? null);
+                    event.currentTarget.value = "";
+                  }}
+                />
               </div>
 
               <div className="mt-4 space-y-2">
                 {groupContacts.map((contact) => (
                   <div
                     key={contact.id}
-                    className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                    className="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm"
                   >
                     <span>
                       {contact.name}{" "}
@@ -190,7 +281,7 @@ export function GroupsClient({ groups, contacts, members }: GroupsClientProps) {
         })}
 
         {!groups.length ? (
-          <div className="rounded-lg border px-4 py-6 text-sm text-muted-foreground">
+          <div className="app-panel px-4 py-8 text-sm text-muted-foreground">
             No groups yet.
           </div>
         ) : null}

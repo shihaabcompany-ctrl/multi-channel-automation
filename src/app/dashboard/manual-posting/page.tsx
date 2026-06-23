@@ -15,11 +15,9 @@ export default async function ManualPostingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Manual Posting
-        </h1>
-        <p className="text-muted-foreground">
-          Send Email and SMS messages immediately to a contact group.
+        <h1 className="page-title">Manual Posting</h1>
+        <p className="page-subtitle">
+          Send multi-channel messages immediately with optional image and video media.
         </p>
       </div>
 

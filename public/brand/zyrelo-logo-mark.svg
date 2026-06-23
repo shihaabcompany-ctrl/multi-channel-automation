@@ -1,0 +1,15 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#10242A"/>
+  <path d="M136 156C136 140.536 148.536 128 164 128H348C360.15 128 370 137.85 370 150C370 155.832 367.683 161.426 363.558 165.551L219.109 310H348C363.464 310 376 322.536 376 338C376 353.464 363.464 366 348 366H164C151.85 366 142 356.15 142 344C142 338.168 144.317 332.574 148.442 328.449L292.891 184H164C148.536 184 136 171.464 136 156Z" fill="url(#zMarkGradient)"/>
+  <path d="M157 154H339L186 337H363" stroke="#F0FEFF" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="350" cy="151" r="22" fill="#35D7D0" stroke="#F0FEFF" stroke-width="10"/>
+  <circle cx="164" cy="337" r="18" fill="#F6A94A" stroke="#F0FEFF" stroke-width="9"/>
+  <circle cx="366" cy="337" r="14" fill="#86F7FF" stroke="#F0FEFF" stroke-width="8"/>
+  <path d="M360 173C392 203 408 230 408 256C408 282 392 309 360 339" stroke="#86F7FF" stroke-width="10" stroke-linecap="round" stroke-dasharray="1 26"/>
+  <defs>
+    <linearGradient id="zMarkGradient" x1="136" y1="128" x2="376" y2="366" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35D7D0"/>
+      <stop offset="1" stop-color="#0F8D8D"/>
+    </linearGradient>
+  </defs>
+</svg>

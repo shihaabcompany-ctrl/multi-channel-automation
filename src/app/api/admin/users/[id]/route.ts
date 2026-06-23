@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 type Params = {
@@ -10,7 +11,7 @@ type Params = {
 
 export async function DELETE(_request: Request, { params }: Params) {
   try {
-    await requireAdmin();
+    const session = await requireAdmin();
 
     const { id } = await params;
 
@@ -23,6 +24,13 @@ export async function DELETE(_request: Request, { params }: Params) {
     if (error) {
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
+
+    await writeAuditLog({
+      actorUserId: session.userId,
+      action: "user.deleted",
+      targetType: "user",
+      targetId: id,
+    });
 
     return NextResponse.json({ ok: true });
   } catch {

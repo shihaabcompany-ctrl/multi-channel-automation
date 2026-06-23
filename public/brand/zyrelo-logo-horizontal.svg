@@ -1,0 +1,20 @@
+<svg width="1280" height="360" viewBox="0 0 1280 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="360" rx="48" fill="#F8FBFC"/>
+  <g transform="translate(72 56)">
+    <rect width="248" height="248" rx="56" fill="#10242A"/>
+    <path d="M66 76C66 68.268 72.268 62 80 62H168C174.075 62 179 66.925 179 73C179 75.916 177.842 78.713 175.779 80.776L106.055 150.5H168C175.732 150.5 182 156.768 182 164.5C182 172.232 175.732 178.5 168 178.5H80C73.925 178.5 69 173.575 69 167.5C69 164.584 70.158 161.787 72.221 159.724L141.945 90H80C72.268 90 66 83.732 66 76Z" fill="url(#smallZGradient)"/>
+    <path d="M77 75H164L91 166H176" stroke="#F0FEFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="169" cy="74" r="12" fill="#35D7D0" stroke="#F0FEFF" stroke-width="5"/>
+    <circle cx="80" cy="166" r="10" fill="#F6A94A" stroke="#F0FEFF" stroke-width="4.5"/>
+    <circle cx="176" cy="166" r="8" fill="#86F7FF" stroke="#F0FEFF" stroke-width="4"/>
+    <path d="M175 85C190 100 198 113 198 124C198 136 190 150 175 165" stroke="#86F7FF" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 13"/>
+  </g>
+  <text x="370" y="207" fill="#122229" font-family="Inter, Geist, Arial, sans-serif" font-size="118" font-weight="760" letter-spacing="-2">Zyrelo</text>
+  <text x="376" y="254" fill="#52646B" font-family="Inter, Geist, Arial, sans-serif" font-size="28" font-weight="500" letter-spacing="6">CHANNEL AUTOMATION</text>
+  <defs>
+    <linearGradient id="smallZGradient" x1="66" y1="62" x2="182" y2="178.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35D7D0"/>
+      <stop offset="1" stop-color="#0F8D8D"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -28,9 +28,9 @@ export default async function AutomationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Automation</h1>
-        <p className="text-muted-foreground">
-          Schedule Email and SMS campaigns for a contact group.
+        <h1 className="page-title">Automation</h1>
+        <p className="page-subtitle">
+          Schedule multi-channel campaigns with optional image and video media.
         </p>
       </div>
 

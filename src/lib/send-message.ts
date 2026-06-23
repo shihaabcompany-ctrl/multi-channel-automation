@@ -1,12 +1,24 @@
 import { sendEmail } from "@/lib/adapters/email-adapter";
 import { sendSms } from "@/lib/adapters/sms-adapter";
-import type { MessageChannel } from "@/types/database";
+import { sendWhatsApp } from "@/lib/adapters/whatsapp-adapter";
+import { renderEmailContentBlocks } from "@/lib/email-content";
+import { getPlatformConnectionForCompany } from "@/lib/platform-connections";
+import type {
+  AutomationMediaItem,
+  EmailContentBlock,
+  MessageChannel,
+} from "@/types/database";
 
 type SendMessagePayload = {
+  companyId: string;
   channel: MessageChannel;
   title: string;
   text: string;
   recipient: string | null;
+  mediaUrls?: string[];
+  socialCaption?: string | null;
+  mediaItems?: AutomationMediaItem[];
+  emailContentBlocks?: EmailContentBlock[];
 };
 
 export async function sendMessage(payload: SendMessagePayload) {
@@ -19,6 +31,7 @@ export async function sendMessage(payload: SendMessagePayload) {
       to: payload.recipient,
       subject: payload.title,
       text: payload.text,
+      html: renderEmailContentBlocks(payload.emailContentBlocks ?? []),
     });
   }
 
@@ -33,8 +46,30 @@ export async function sendMessage(payload: SendMessagePayload) {
     });
   }
 
+  const connection = await getPlatformConnectionForCompany(
+    payload.companyId,
+    payload.channel
+  );
+
+  if (!connection) {
+    return {
+      status: "failed" as const,
+      error: `${payload.channel} connection is not configured for this company.`,
+    };
+  }
+
+  if (payload.channel === "whatsapp") {
+    return sendWhatsApp({
+      to: payload.recipient,
+      text: payload.text,
+      mediaUrls: payload.mediaUrls,
+      mediaItems: payload.mediaItems,
+      connection,
+    });
+  }
+
   return {
     status: "failed" as const,
-    error: `Unsupported channel: ${payload.channel}`,
+    error: `${payload.channel} adapter is not implemented yet for ${connection.connectedAccountName}. ${payload.mediaUrls?.length ?? 0} media file(s) attached. ${payload.mediaItems?.filter((item) => item.caption).length ?? 0} caption(s) attached.`,
   };
 }

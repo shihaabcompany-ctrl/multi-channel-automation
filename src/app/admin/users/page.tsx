@@ -2,6 +2,15 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { AdminUsersClient } from "@/components/users/admin-users-client";
 import type { Company } from "@/types/database";
 
+type UserRowFromSupabase = {
+  id: string;
+  company_id: string | null;
+  email: string;
+  role: string;
+  created_at: string;
+  companies?: { name: string } | { name: string }[] | null;
+};
+
 export default async function AdminUsersPage() {
   const [{ data: companies }, { data: users }] = await Promise.all([
     supabaseAdmin
@@ -14,7 +23,7 @@ export default async function AdminUsersPage() {
       .order("created_at", { ascending: false }),
   ]);
 
-  const userRows = (users ?? []).map((user: any) => ({
+  const userRows = ((users ?? []) as UserRowFromSupabase[]).map((user) => ({
     ...user,
     companies: Array.isArray(user?.companies) ? user.companies[0] : user?.companies,
   }));
@@ -22,8 +31,8 @@ export default async function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Users</h1>
-        <p className="text-muted-foreground">
+        <h1 className="page-title">Users</h1>
+        <p className="page-subtitle">
           Create company owners and staff accounts.
         </p>
       </div>

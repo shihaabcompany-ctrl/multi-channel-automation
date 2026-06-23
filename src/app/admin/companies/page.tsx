@@ -12,8 +12,8 @@ export default async function AdminCompaniesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Companies</h1>
-        <p className="text-muted-foreground">
+        <h1 className="page-title">Companies</h1>
+        <p className="page-subtitle">
           Create and manage client companies.
         </p>
       </div>

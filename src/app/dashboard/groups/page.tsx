@@ -31,8 +31,8 @@ export default async function GroupsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Groups</h1>
-        <p className="text-muted-foreground">
+        <h1 className="page-title">Groups</h1>
+        <p className="page-subtitle">
           Create groups and assign contacts to campaign audiences.
         </p>
       </div>

@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { AppShell } from "@/components/layout/app-shell";
+import { requireAdmin } from "@/lib/auth";
 
 const adminNavItems = [
   { href: "/admin", label: "Overview" },
@@ -9,9 +10,19 @@ const adminNavItems = [
   { href: "/admin/settings", label: "Platform Settings" },
 ];
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const session = await requireAdmin();
+
   return (
-    <AppShell title="Admin Panel" navItems={adminNavItems}>
+    <AppShell
+      title="Admin Panel"
+      navItems={adminNavItems}
+      account={{
+        name: "Zyrelo Admin",
+        email: session.email,
+        role: session.role,
+      }}
+    >
       {children}
     </AppShell>
   );
