@@ -1,4 +1,6 @@
 import { sendEmail } from "@/lib/adapters/email-adapter";
+import { sendFacebookPost } from "@/lib/adapters/facebook-adapter";
+import { sendInstagramPost } from "@/lib/adapters/instagram-adapter";
 import { sendSms } from "@/lib/adapters/sms-adapter";
 import { sendWhatsApp } from "@/lib/adapters/whatsapp-adapter";
 import { renderEmailContentBlocks } from "@/lib/email-content";
@@ -61,6 +63,24 @@ export async function sendMessage(payload: SendMessagePayload) {
   if (payload.channel === "whatsapp") {
     return sendWhatsApp({
       to: payload.recipient,
+      text: payload.text,
+      mediaUrls: payload.mediaUrls,
+      mediaItems: payload.mediaItems,
+      connection,
+    });
+  }
+
+  if (payload.channel === "facebook") {
+    return sendFacebookPost({
+      text: payload.text,
+      mediaUrls: payload.mediaUrls,
+      mediaItems: payload.mediaItems,
+      connection,
+    });
+  }
+
+  if (payload.channel === "instagram") {
+    return sendInstagramPost({
       text: payload.text,
       mediaUrls: payload.mediaUrls,
       mediaItems: payload.mediaItems,

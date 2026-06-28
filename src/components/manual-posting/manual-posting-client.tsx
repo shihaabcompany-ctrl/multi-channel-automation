@@ -109,7 +109,7 @@ export function ManualPostingClient({ groups }: ManualPostingClientProps) {
         title,
         messageText,
         targetChannels,
-        contactGroupId: formData.get("contactGroupId"),
+        contactGroupId: formData.get("contactGroupId") || null,
         mediaUrls,
         socialCaption: mediaItems.find((item) => item.caption)?.caption ?? null,
         mediaItems,
@@ -182,11 +182,10 @@ export function ManualPostingClient({ groups }: ManualPostingClientProps) {
         <select
           name="contactGroupId"
           className="h-10 rounded-md border bg-background px-3 text-sm"
-          required
           defaultValue=""
         >
-          <option value="" disabled>
-            Select group
+          <option value="">
+            No group selected
           </option>
           {groups.map((group) => (
             <option key={group.id} value={group.id}>

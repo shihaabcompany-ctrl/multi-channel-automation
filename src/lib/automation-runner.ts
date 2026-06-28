@@ -16,6 +16,7 @@ type ContactGroupMemberRow = {
 type RunDueAutomationsOptions = {
   limit?: number;
   now?: Date;
+  companyId?: string;
 };
 
 type AutomationRunResult = {
@@ -32,6 +33,12 @@ const socialChannels = new Set<MessageChannel>([
   "whatsapp",
   "instagram",
   "facebook",
+  "linkedin",
+]);
+
+const accountPublishingChannels = new Set<MessageChannel>([
+  "facebook",
+  "instagram",
   "linkedin",
 ]);
 
@@ -79,15 +86,52 @@ async function processAutomation(automation: Automation) {
     throw processingError;
   }
 
-  const contacts = await getAutomationContacts(automation);
-
   for (const channel of automation.target_channels) {
+    const text =
+      socialChannels.has(channel) && automation.social_caption
+        ? automation.social_caption
+        : automation.message_text;
+
+    if (accountPublishingChannels.has(channel)) {
+      const result = await sendMessage({
+        companyId: automation.company_id,
+        channel,
+        title: automation.title,
+        text,
+        recipient: null,
+        mediaUrls: automation.media_urls,
+        socialCaption: automation.social_caption,
+        mediaItems: automation.media_items,
+        emailContentBlocks: automation.email_content_blocks,
+      });
+
+      await supabaseAdmin.from("messages_log").insert({
+        automation_id: automation.id,
+        company_id: automation.company_id,
+        channel,
+        recipient: "connected account",
+        status: result.status,
+        error_reason: result.error,
+        sent_at: result.status === "sent" ? new Date().toISOString() : null,
+      });
+
+      if (result.status === "sent") {
+        sent += 1;
+      } else {
+        failed += 1;
+      }
+
+      continue;
+    }
+
+    const contacts = await getAutomationContacts(automation);
+
+    if (!contacts.length) {
+      throw new Error("Selected contact group has no contacts.");
+    }
+
     for (const contact of contacts) {
       const recipient = getRecipientForChannel(channel, contact);
-      const text =
-        socialChannels.has(channel) && automation.social_caption
-          ? automation.social_caption
-          : automation.message_text;
 
       let result: Awaited<ReturnType<typeof sendMessage>>;
 
@@ -139,14 +183,20 @@ async function processAutomation(automation: Automation) {
 export async function runDueAutomations({
   limit = 10,
   now = new Date(),
+  companyId,
 }: RunDueAutomationsOptions = {}): Promise<AutomationRunResult> {
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("automations")
     .select("*")
     .eq("status", "queued")
     .lte("scheduled_at", now.toISOString())
-    .order("scheduled_at", { ascending: true })
-    .limit(limit);
+    .order("scheduled_at", { ascending: true });
+
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
+
+  const { data, error } = await query.limit(limit);
 
   if (error) {
     throw error;

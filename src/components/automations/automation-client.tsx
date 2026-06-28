@@ -39,6 +39,8 @@ export function AutomationClient({ groups, automations }: AutomationClientProps)
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [runDueLoading, setRunDueLoading] = useState(false);
+  const [runDueResult, setRunDueResult] = useState("");
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>([]);
   const [emailContentBlocks, setEmailContentBlocks] = useState<EmailContentBlock[]>(
@@ -211,6 +213,33 @@ export function AutomationClient({ groups, automations }: AutomationClientProps)
     router.refresh();
   }
 
+  async function runDueNow() {
+    setRunDueLoading(true);
+    setRunDueResult("");
+
+    const response = await fetch("/api/automations/run-due", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setRunDueResult(data.message ?? "Could not run due automations.");
+      setRunDueLoading(false);
+      return;
+    }
+
+    const firstError = data.errors?.[0]?.message;
+    setRunDueResult(
+      firstError
+        ? `Processed ${data.processed}. ${firstError}`
+        : `Processed ${data.processed}. Sent ${data.sent}, failed ${data.failed}.`
+    );
+    setRunDueLoading(false);
+    router.refresh();
+  }
+
   return (
     <div className="space-y-6">
       <form
@@ -351,6 +380,27 @@ export function AutomationClient({ groups, automations }: AutomationClientProps)
       </form>
 
       <div className="app-panel overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+          <div>
+            <h2 className="text-sm font-semibold">Scheduled Automations</h2>
+            <p className="text-sm text-muted-foreground">
+              Queued campaigns are picked up by the scheduler.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={runDueNow}
+            disabled={runDueLoading}
+          >
+            {runDueLoading ? "Running..." : "Run due now"}
+          </Button>
+          {runDueResult ? (
+            <p className="basis-full text-sm text-muted-foreground">
+              {runDueResult}
+            </p>
+          ) : null}
+        </div>
         <div className="overflow-x-auto">
           <div className="min-w-[920px]">
             <div className="grid grid-cols-7 border-b bg-muted/40 px-4 py-3 text-xs font-medium uppercase text-muted-foreground">

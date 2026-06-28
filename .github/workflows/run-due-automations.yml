@@ -11,7 +11,12 @@ jobs:
     steps:
       - name: Call Zyrelo cron endpoint
         run: |
+          APP_URL="${{ secrets.ZYRELO_APP_URL }}"
+          APP_URL="${APP_URL%/}"
+
+          echo "Calling ${APP_URL}/api/cron/run-due"
+
           curl --fail --show-error --silent \
             --request GET \
             --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.ZYRELO_APP_URL }}/api/cron/run-due"
+            "${APP_URL}/api/cron/run-due"

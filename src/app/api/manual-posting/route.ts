@@ -9,7 +9,7 @@ const manualPostingSchema = z.object({
   title: z.string().optional().default(""),
   messageText: z.string().optional().default(""),
   targetChannels: z.array(z.enum(MESSAGE_CHANNEL_VALUES)).min(1),
-  contactGroupId: z.string().uuid(),
+  contactGroupId: z.string().uuid().nullable(),
   mediaUrls: z.array(z.string().url()).default([]),
   socialCaption: z.string().nullable().default(null),
   mediaItems: z
@@ -42,6 +42,12 @@ const manualPostingSchema = z.object({
 
 const socialChannelValues = new Set([
   "whatsapp",
+  "instagram",
+  "facebook",
+  "linkedin",
+]);
+
+const accountPublishingChannelValues = new Set([
   "instagram",
   "facebook",
   "linkedin",
@@ -80,35 +86,87 @@ export async function POST(request: Request) {
 
   const title = parsed.data.title.trim() || "Social media post";
   const messageText = parsed.data.messageText.trim();
+  const contactChannels = parsed.data.targetChannels.filter(
+    (channel) => !accountPublishingChannelValues.has(channel)
+  );
 
-  const { data: group } = await supabaseAdmin
-    .from("contact_groups")
-    .select("id")
-    .eq("id", parsed.data.contactGroupId)
-    .eq("company_id", session.companyId)
-    .single();
-
-  if (!group) {
-    return NextResponse.json({ message: "Group not found." }, { status: 404 });
+  if (contactChannels.length && !parsed.data.contactGroupId) {
+    return NextResponse.json(
+      { message: "Select a group for email, SMS, or WhatsApp." },
+      { status: 400 }
+    );
   }
 
-  const { data: members, error: membersError } = await supabaseAdmin
-    .from("contact_group_members")
-    .select("contacts(id, name, email, phone)")
-    .eq("group_id", parsed.data.contactGroupId);
+  let contacts: Array<{ email: string | null; phone: string | null }> = [];
 
-  if (membersError) {
-    return NextResponse.json({ message: membersError.message }, { status: 500 });
+  if (parsed.data.contactGroupId) {
+    const { data: group } = await supabaseAdmin
+      .from("contact_groups")
+      .select("id")
+      .eq("id", parsed.data.contactGroupId)
+      .eq("company_id", session.companyId)
+      .single();
+
+    if (!group) {
+      return NextResponse.json({ message: "Group not found." }, { status: 404 });
+    }
+
+    const { data: members, error: membersError } = await supabaseAdmin
+      .from("contact_group_members")
+      .select("contacts(id, name, email, phone)")
+      .eq("group_id", parsed.data.contactGroupId);
+
+    if (membersError) {
+      return NextResponse.json({ message: membersError.message }, { status: 500 });
+    }
+
+    contacts = (members ?? [])
+      .flatMap((member) => member.contacts ?? [])
+      .filter(Boolean);
   }
-
-  const contacts = (members ?? [])
-  .flatMap((member) => member.contacts ?? [])
-  .filter(Boolean);
 
   let sent = 0;
   let failed = 0;
 
   for (const channel of parsed.data.targetChannels) {
+    const text =
+      parsed.data.socialCaption &&
+      ["whatsapp", "instagram", "facebook", "linkedin"].includes(channel)
+        ? parsed.data.socialCaption
+        : messageText;
+
+    if (accountPublishingChannelValues.has(channel)) {
+      const result = await sendMessage({
+        companyId: session.companyId,
+        channel,
+        title,
+        text,
+        recipient: null,
+        mediaUrls: parsed.data.mediaUrls,
+        socialCaption: parsed.data.socialCaption,
+        mediaItems: parsed.data.mediaItems,
+        emailContentBlocks: parsed.data.emailContentBlocks,
+      });
+
+      if (result.status === "sent") {
+        sent += 1;
+      } else {
+        failed += 1;
+      }
+
+      await supabaseAdmin.from("messages_log").insert({
+        automation_id: null,
+        company_id: session.companyId,
+        channel,
+        recipient: "connected account",
+        status: result.status,
+        error_reason: result.error,
+        sent_at: result.status === "sent" ? new Date().toISOString() : null,
+      });
+
+      continue;
+    }
+
     for (const contact of contacts) {
       const recipient = channel === "email" ? contact.email : contact.phone;
 
@@ -116,11 +174,7 @@ export async function POST(request: Request) {
         companyId: session.companyId,
         channel,
         title,
-        text:
-          parsed.data.socialCaption &&
-          ["whatsapp", "instagram", "facebook", "linkedin"].includes(channel)
-            ? parsed.data.socialCaption
-            : messageText,
+        text,
         recipient,
         mediaUrls: parsed.data.mediaUrls,
         socialCaption: parsed.data.socialCaption,
