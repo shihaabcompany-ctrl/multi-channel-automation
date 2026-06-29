@@ -23,10 +23,18 @@ type AutomationRunResult = {
   processed: number;
   sent: number;
   failed: number;
+  diagnostics?: AutomationDiagnostics;
   errors: Array<{
     automationId: string;
     message: string;
   }>;
+};
+
+type AutomationDiagnostics = {
+  now: string;
+  queuedCount: number;
+  dueCount: number;
+  nextQueuedAt: string | null;
 };
 
 const socialChannels = new Set<MessageChannel>([
@@ -185,6 +193,7 @@ export async function runDueAutomations({
   now = new Date(),
   companyId,
 }: RunDueAutomationsOptions = {}): Promise<AutomationRunResult> {
+  const diagnostics = await getAutomationDiagnostics({ now, companyId });
   let query = supabaseAdmin
     .from("automations")
     .select("*")
@@ -207,6 +216,7 @@ export async function runDueAutomations({
     processed: 0,
     sent: 0,
     failed: 0,
+    diagnostics,
     errors: [],
   };
 
@@ -233,4 +243,48 @@ export async function runDueAutomations({
   }
 
   return result;
+}
+
+export async function getAutomationDiagnostics({
+  now = new Date(),
+  companyId,
+}: Pick<RunDueAutomationsOptions, "now" | "companyId"> = {}): Promise<AutomationDiagnostics> {
+  let queuedQuery = supabaseAdmin
+    .from("automations")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "queued");
+  let dueQuery = supabaseAdmin
+    .from("automations")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "queued")
+    .lte("scheduled_at", now.toISOString());
+  let nextQuery = supabaseAdmin
+    .from("automations")
+    .select("scheduled_at")
+    .eq("status", "queued")
+    .order("scheduled_at", { ascending: true })
+    .limit(1);
+
+  if (companyId) {
+    queuedQuery = queuedQuery.eq("company_id", companyId);
+    dueQuery = dueQuery.eq("company_id", companyId);
+    nextQuery = nextQuery.eq("company_id", companyId);
+  }
+
+  const [queuedResult, dueResult, nextResult] = await Promise.all([
+    queuedQuery,
+    dueQuery,
+    nextQuery,
+  ]);
+
+  if (queuedResult.error) throw queuedResult.error;
+  if (dueResult.error) throw dueResult.error;
+  if (nextResult.error) throw nextResult.error;
+
+  return {
+    now: now.toISOString(),
+    queuedCount: queuedResult.count ?? 0,
+    dueCount: dueResult.count ?? 0,
+    nextQueuedAt: nextResult.data?.[0]?.scheduled_at ?? null,
+  };
 }
