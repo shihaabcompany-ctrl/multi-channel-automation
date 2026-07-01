@@ -13,6 +13,11 @@ type SendResult = {
   error: string | null;
 };
 
+type InstagramContainerStatus = {
+  status?: string;
+  status_code?: "EXPIRED" | "ERROR" | "FINISHED" | "IN_PROGRESS" | string;
+};
+
 const graphApiVersion = process.env.META_GRAPH_API_VERSION ?? "v20.0";
 
 function isVideo(url: string) {
@@ -48,6 +53,52 @@ async function instagramRequest(
   }
 
   return data as { id?: string };
+}
+
+async function getInstagramContainerStatus(
+  creationId: string,
+  accessToken: string
+) {
+  const response = await fetch(
+    `https://graph.facebook.com/${graphApiVersion}/${creationId}?fields=status_code,status&access_token=${encodeURIComponent(accessToken)}`
+  );
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message ??
+        data?.message ??
+        "Could not check Instagram media status."
+    );
+  }
+
+  return data as InstagramContainerStatus;
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForInstagramMedia(creationId: string, accessToken: string) {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const status = await getInstagramContainerStatus(creationId, accessToken);
+
+    if (status.status_code === "FINISHED") {
+      return;
+    }
+
+    if (status.status_code === "ERROR" || status.status_code === "EXPIRED") {
+      throw new Error(
+        status.status || `Instagram media container ${status.status_code}.`
+      );
+    }
+
+    await wait(3000);
+  }
+
+  throw new Error(
+    "Instagram media is still processing. Try again in a minute or use a smaller/public media file."
+  );
 }
 
 export async function sendInstagramPost({
@@ -94,6 +145,8 @@ export async function sendInstagramPost({
       if (!lastCreationId) {
         throw new Error("Instagram did not return a media creation ID.");
       }
+
+      await waitForInstagramMedia(lastCreationId, connection.accessToken);
 
       await instagramRequest(igUserId, connection.accessToken, "media_publish", {
         creation_id: lastCreationId,
